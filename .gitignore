@@ -1,1 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.pyd
+*.pyo
+*.pkl
+*.sqlite3
+*.db
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Environment Variables
 .env
+.env.*
+
+# Logs and debug
+*.log
+*.out
+*.err
+logs/
+
+# Alembic (if unused, still ignore migrations to avoid clutter)
+alembic/versions/
+
+# MyPy / Pyright / Pytest / Coverage
+.mypy_cache/
+.pytest_cache/
+coverage.xml
+htmlcov/
+.tox/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter Notebooks (if any)
+.ipynb_checkpoints/
+
+# Docker
+*.pid
+*.pid.lock
+*.sock
+docker-compose.override.yml
+
+# System
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.manifest
+*.spec
+
+# PyInstaller
+*.spec
+
+# FastAPI OpenAPI docs cache (if generated)
+openapi.json

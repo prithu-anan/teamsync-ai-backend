@@ -39,3 +39,11 @@ uvicorn app.main:app --reload
 [Click on this link]( http://localhost:8000/health)
 
 - You'll see
+
+```javascript
+{
+  "status": "healthy",
+  "message": "Connected to database",
+  "time": "2025-06-09T14:43:26.135516+00:00"
+}
+```
