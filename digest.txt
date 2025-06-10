@@ -1,0 +1,161 @@
+Directory structure:
+└── teamsync-ai-backend/
+    ├── README.md
+    ├── requirement.txt
+    └── app/
+        ├── db.py
+        ├── main.py
+        ├── models.py
+        └── routes/
+            ├── health.py
+            └── task.py
+
+================================================
+File: README.md
+================================================
+## Project Setup
+
+* Clone the repository
+
+```bash
+git clone https://github.com/suhashines/teamysnc-ai-backend.git
+cd teamysnc-ai-backend
+```
+
+* Create and activate virtual environment
+
+```bash
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+```
+
+* Install the dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+* Create a .env file with the following credential - 
+
+```bash
+DATABASE_URL=postgresql://postgres:123@localhost:5433/postgres
+```
+
+* Make sure the postgres docker service is running
+* Then run fast api backend
+
+```bash
+uvicorn app.main:app --reload
+```
+
+- Health check 
+
+[Click on this link]( http://localhost:8000/health)
+
+- You'll see
+
+```javascript
+{
+  "status": "healthy",
+  "message": "Connected to database",
+  "time": "2025-06-09T14:43:26.135516+00:00"
+}
+```
+
+
+
+================================================
+File: requirement.txt
+================================================
+annotated-types==0.7.0
+anyio==4.9.0
+click==8.2.1
+exceptiongroup==1.3.0
+fastapi==0.115.12
+greenlet==3.2.3
+h11==0.16.0
+idna==3.10
+psycopg2-binary==2.9.10
+pydantic==2.11.5
+pydantic_core==2.33.2
+python-dotenv==1.1.0
+sniffio==1.3.1
+SQLAlchemy==2.0.41
+starlette==0.46.2
+typing-inspection==0.4.1
+typing_extensions==4.14.0
+uvicorn==0.34.3
+
+
+
+================================================
+File: app/db.py
+================================================
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+
+================================================
+File: app/main.py
+================================================
+from fastapi import FastAPI
+from app.routes import health
+
+app = FastAPI()
+
+app.include_router(health.router)
+
+
+
+================================================
+File: app/models.py
+================================================
+
+
+
+================================================
+File: app/routes/health.py
+================================================
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.db import SessionLocal
+from sqlalchemy import text
+
+router = APIRouter()
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        result = db.execute(text("SELECT NOW()"))
+        current_time = result.scalar()  # Simple query to test DB
+        return {"status": "healthy", "message": "Connected to database", "time":current_time}
+    except Exception as e:
+        return {"status": "unhealthy", "message": str(e)}
+
+
+
+================================================
+File: app/routes/task.py
+================================================
+
+

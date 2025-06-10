@@ -101,3 +101,5 @@ Your task is to implement the api considering the below points:
 3. Use few shot strategy to stabilize output
 
 4. Generate multiple answer and then perform majority voting
+
+5. You need to access relevant tables from the database, follow best practices (such as creating model classes in appropriate folder that represents the tables or other better alternatives if exist). Keep the code clean and modular.

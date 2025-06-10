@@ -63,7 +63,7 @@ To get high-quality estimates, you should **construct a detailed and structured 
 * `priority` (affects urgency and task allocation)
 * `assigned_to` (optional but may affect estimate if user-specific modeling is possible)
 * `project_id` (could hint at domain/complexity if you encode project metadata later)
-* `parent_task_id` (if present, provide title + time estimates of the parent or sibling tasks)
+* `parent_task_id` (if present, provide title + time eistimates of the parent or sibling tasks)
 * `historical_average_time_estimate` of similar tasks (once you accumulate some history)
 * Any known `dependencies` or `blocked` info
 
