@@ -1,16 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
 from app.models import Task, Project
 from pydantic import BaseModel
 from typing import Optional, List
-import os
-from openai import OpenAI
 import re
 from collections import Counter
 from app.deps import get_db
+from app.llm.factory import get_llm_provider
 
 router = APIRouter()
+llm = get_llm_provider("deepseek")
 
 # Request model for input validation
 class EstimateDeadlineRequest(BaseModel):
@@ -55,22 +54,6 @@ def construct_prompt(project: Project, example_tasks: List[Task], new_task: Esti
     prompt += "Estimated Time: [time] hours\n"
     prompt += "Comment: [explanation]\n"
     return prompt
-
-# Get multiple responses from LLM
-def get_llm_response(prompt: str, num_responses: int = 1) -> List[str]:
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-    responses = []
-    for _ in range(num_responses):
-        completion = client.chat.completions.create(
-            model="deepseek/deepseek-r1-0528:free",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        responses.append(completion.choices[0].message.content)
-        print(f"response: {responses}")
-    return responses
 
 # Parse LLM response into structured data
 def parse_response(response: str) -> Optional[dict]:
@@ -134,7 +117,7 @@ def estimate_deadline(request: EstimateDeadlineRequest, db: Session = Depends(ge
 
     # Get LLM responses
     try:
-        responses = get_llm_response(prompt)
+        responses = llm.generate(prompt)
         print(f"llm said {responses}")
 
     except Exception as e:
