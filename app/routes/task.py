@@ -9,7 +9,7 @@ from app.deps import get_db
 from app.llm.factory import get_llm_provider
 
 router = APIRouter()
-llm = get_llm_provider("deepseek")
+llm = get_llm_provider("gemini")
 
 # Request model for input validation
 class EstimateDeadlineRequest(BaseModel):
