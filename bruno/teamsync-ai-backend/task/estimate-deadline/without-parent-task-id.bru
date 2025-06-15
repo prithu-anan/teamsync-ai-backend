@@ -1,0 +1,19 @@
+meta {
+  name: without-parent-task-id
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BASE_URL}}/tasks/estimate-deadline
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title":"fix the bug in spring auth",
+    "description":"spring auth module is not parsing the jwt correctly",
+    "project_id":5
+  }
+}

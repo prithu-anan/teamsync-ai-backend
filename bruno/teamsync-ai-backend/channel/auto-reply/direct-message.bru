@@ -1,0 +1,18 @@
+meta {
+  name: direct-message
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BASE_URL}}/channels/auto-reply
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "recipient_id": 2,
+      "sender_id":3
+  }
+}

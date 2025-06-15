@@ -1,0 +1,19 @@
+meta {
+  name: thread-message
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/channels/auto-reply
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "recipient_id": 2,
+      "sender_id":3,
+      "parent_thread_id":1
+  }
+}

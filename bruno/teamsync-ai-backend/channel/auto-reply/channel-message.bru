@@ -1,0 +1,18 @@
+meta {
+  name: channel-message
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/channels/auto-reply
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "channel_id": 1,
+      "sender_id":2
+  }
+}
