@@ -8,16 +8,9 @@ import os
 from openai import OpenAI
 import re
 from collections import Counter
+from app.deps import get_db
 
 router = APIRouter()
-
-# Dependency to get database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Request model for input validation
 class EstimateDeadlineRequest(BaseModel):

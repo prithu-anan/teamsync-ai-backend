@@ -66,6 +66,26 @@ CREATE TABLE Users (
 
 ```
 
+You need to create appropriate model classes to interact with database tables. A demo is given below:
+
+./app/models/project.py
+
+```python
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from app.db import Base
+from datetime import datetime
+
+class Project(Base):
+    __tablename__ = "projects"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    tasks = relationship("Task", back_populates="project")
+```
+
 Consider the following factors while designing the prompt:
 
 You are an expert communication assistant helping users craft quick replies in messaging channels. Your task is to generate 3 relevant, concise response suggestions based on the conversation context.
