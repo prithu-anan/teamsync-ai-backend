@@ -6,6 +6,15 @@ meta {
 
 post {
   url: {{BASE_URL}}/tasks/estimate-deadline
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "title":"fix the bug in spring auth",
+    "description":"spring auth module is not parsing the jwt correctly",
+    "project_id":5,
+    "parent_task_id":5
+  }
 }
