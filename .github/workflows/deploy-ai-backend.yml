@@ -41,6 +41,9 @@ jobs:
           script: |
             set -eux
 
+            TAG=${{ github.sha }}
+            IMAGE=${{ secrets.REGISTRY_USER }}/teamsync-ai-backend
+
             # ensure the shared network exists
             docker network inspect teamsync_network \
               || docker network create teamsync_network
