@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  ai-backend:
+    image: ${{ secrets.REGISTRY_USER }}/teamsync-ai-backend:latest
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    ports:
+      - "8000:8000"
+    networks:
+      - teamsync_network
+
+networks:
+  teamsync_network:
+    external:
+      name: teamsync_network
