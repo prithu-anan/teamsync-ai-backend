@@ -1,0 +1,65 @@
+name: Build & Deploy AI Backend
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    name: Build & Deploy AI Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASS }}
+
+      - name: Build & Push Docker Image
+        run: |
+          TAG=${{ github.sha }}
+          IMAGE=${{ secrets.REGISTRY_USER }}/teamsync-ai-backend
+          docker build -f Dockerfile -t $IMAGE:${TAG} .
+          docker push $IMAGE:${TAG}
+          docker tag  $IMAGE:${TAG} $IMAGE:latest
+          docker push $IMAGE:latest
+
+      - name: SSH & Deploy on VM
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host:     ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key:      ${{ secrets.SSH_KEY }}
+          port:     22
+          script: |
+            set -eux
+
+            # ensure the shared network exists
+            docker network inspect teamsync_network \
+              || docker network create teamsync_network
+
+            # pull the new image (or fallback to latest)
+            docker pull $IMAGE:${TAG} || docker pull $IMAGE:latest
+
+            # remove old container
+            old=$(docker ps -q --filter "name=teamsync-ai-backend")
+            if [ -n "$old" ]; then
+              docker rm -f $old
+            fi
+
+            # run the new container, injecting secrets as env
+            docker run -d \
+              --name teamsync-ai-backend \
+              --network teamsync_network \
+              -p 8000:8000 \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+              -e DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}" \
+              $IMAGE:${TAG}
