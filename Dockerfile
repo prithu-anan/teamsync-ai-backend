@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install OS deps (if any), then Python deps
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirement.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your code
 COPY . .
