@@ -1,7 +1,5 @@
 name: Build & Deploy AI Backend
 
-# demo comment
-
 on:
   push:
     branches: [ "master" ]
@@ -54,7 +52,7 @@ jobs:
             docker pull $IMAGE:${TAG} || docker pull $IMAGE:latest
 
             # remove old container
-            old=$(docker ps -q --filter "name=teamsync-ai-backend")
+            old=$(docker ps -aq --filter "name=teamsync-ai-backend")
             if [ -n "$old" ]; then
               docker rm -f $old
             fi
