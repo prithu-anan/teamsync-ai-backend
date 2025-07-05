@@ -62,18 +62,26 @@ jobs:
               docker rm -f $old
             fi
       
-            # run new container
+            DATABASE_URL='${{ secrets.DATABASE_URL }}'
+            GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}'
+            DEEPSEEK_API_KEY='${{ secrets.DEEPSEEK_API_KEY }}'
+            QUADRANT_URL='${{ secrets.QUADRANT_URL }}'
+            QUADRANT_API_KEY='${{ secrets.QUADRANT_API_KEY }}'
+            OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}'
+            PROJECT_ID='${{ secrets.PROJECT_ID }}'
+            
+            # …then your docker run can reference them:
             docker run -d \
               --name teamsync-ai-backend \
               --network teamsync_network \
               -p 8000:8000 \
               -v ~/firebase-creds.json:/app/firebase-creds.json:ro \
               -e GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-creds.json \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-              -e DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}" \
-              -e QUADRANT_URL="${{ secrets.QUADRANT_URL }}" \
-              -e QUADRANT_API_KEY="${{ secrets.QUADRANT_API_KEY }}" \
-              -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-              -e PROJECT_ID="${{ secrets.PROJECT_ID }}" \              
-              "$IMAGE:${TAG}"
+              -e DATABASE_URL="$DATABASE_URL" \
+              -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+              -e DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" \
+              -e QUADRANT_URL="$QUADRANT_URL" \
+              -e QUADRANT_API_KEY="$QUADRANT_API_KEY" \
+              -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+              -e PROJECT_ID="$PROJECT_ID" \
+              "$IMAGE:$TAG"
