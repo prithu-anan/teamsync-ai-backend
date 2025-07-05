@@ -1,0 +1,27 @@
+meta {
+  name: Get Available Contexts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/chatbot/context
+  body: none
+  auth: none
+}
+
+docs {
+  name: Get Available Contexts
+  description: Returns all available context collections from Qdrant
+  response: |
+    Returns a list of collection names that can be used as context for RAG conversations.
+    
+    Example response:
+    ```json
+    [
+      "suhas_profile_chunks",
+      "about_us",
+      "code_pilot"
+    ]
+    ```
+} 

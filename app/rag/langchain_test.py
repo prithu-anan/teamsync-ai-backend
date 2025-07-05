@@ -1,13 +1,14 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import SecretStr
 
-print("google api key is", os.getenv("GEMINI_API_KEY"))
+# print("google api key is", os.getenv("GEMINI_API_KEY"))
 
-messages = [
-    SystemMessage(content="Solve the following math problems"),
-    HumanMessage(content="What is 81 divided by 9?"),
-]
+# messages = [
+#     SystemMessage(content="Solve the following math problems"),
+#     HumanMessage(content="What is 81 divided by 9?"),
+# ]
 
 
 # ---- LangChain OpenAI Chat Model Example ----
@@ -40,9 +41,12 @@ model = ChatGoogleGenerativeAI(
     transport=None,
     additional_headers=None,
     client=None,
-    async_client=None,
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=SecretStr(os.getenv("GEMINI_API_KEY") or "") if os.getenv("GEMINI_API_KEY") else None,
+    temperature=0.0,
+    max_tokens=1000,
+    top_p=1,
+    top_k=40
 )
 
-result = model.invoke(messages)
-print(f"Answer from Google: {result.content}")
+# result = model.invoke(messages)
+# print(f"Answer from Google: {result.content}")

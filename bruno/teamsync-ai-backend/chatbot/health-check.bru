@@ -1,0 +1,27 @@
+meta {
+  name: Chatbot Health Check
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{BASE_URL}}/chatbot/health
+  body: none
+  auth: none
+}
+
+docs {
+  name: Chatbot Health Check
+  description: Health check endpoint for the chatbot service
+  response: |
+    Returns the health status of the chatbot service.
+    
+    Example response:
+    ```json
+    {
+      "status": "healthy",
+      "available_collections": 3,
+      "service": "chatbot"
+    }
+    ```
+} 

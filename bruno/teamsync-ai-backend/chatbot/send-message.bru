@@ -1,0 +1,48 @@
+meta {
+  name: Send Message
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/chatbot/{{userId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "I hope you remember me. can you tell me about Prithu Anan",
+    "context":"about_us"
+  }
+}
+
+docs {
+  name: Send Message
+  description: Send a message to the chatbot and get a response
+  params: |
+    - userId: Unique identifier for the user
+    - userQuery: The message/query from the user
+    - context (optional): Collection name for RAG context (if not provided, works as regular chat)
+  request: |
+    ```json
+    {
+      "query": "Tell me about Suhas",
+      "context": "suhas_profile_chunks"
+    }
+    ```
+  response: |
+    Returns the AI response with metadata.
+    
+    Example response:
+    ```json
+    {
+      "answer": "Suhas Abdullah is a Computer Science and Engineering student...",
+      "response_type": "rag",
+      "context": "suhas_profile_chunks",
+      "user_id": "user123",
+      "message_count": 4,
+      "error": null
+    }
+    ```
+}

@@ -47,3 +47,105 @@ uvicorn app.main:app --reload
   "time": "2025-06-09T14:43:26.135516+00:00"
 }
 ```
+
+### Add Knowledgebase to RAG
+
+The RAG system allows you to manage knowledge collections and documents. Here's how to use it:
+
+#### Directory Structure
+```
+app/rag/
+├── books/                    # Collection folders
+│   ├── about_us/            # Collection: about_us
+│   │   ├── document1.txt    # Documents (.txt, .md)
+│   │   └── document2.md
+│   └── code_pilot/          # Collection: code_pilot
+│       ├── guide.txt
+│       └── examples.md
+├── knowledge_agent.py        # Knowledge management script
+├── conversational_agent.py   # Chat functionality
+└── ...
+```
+
+#### 1. Adding Documents to Existing Collection
+
+```bash
+# From project root
+python app/rag/knowledge_agent.py add-doc <collection_name> <document_path>
+
+# Example: Add a document to 'about_us' collection
+python app/rag/knowledge_agent.py add-doc about_us /path/to/new_document.txt
+```
+
+#### 2. Creating New Collections
+
+**Option A: From existing folder**
+```bash
+# Create collection from folder (will be moved to books/)
+python app/rag/knowledge_agent.py add-collection /path/to/your/folder
+
+# Example: Create collection from existing about_us folder
+python app/rag/knowledge_agent.py add-collection app/rag/books/about_us
+```
+
+**Option B: Create folder structure manually**
+1. Create a new folder in `app/rag/books/` (e.g., `app/rag/books/my_collection/`)
+2. Add your documents (`.txt` or `.md` files) to the folder
+3. Run the add-collection command:
+```bash
+python app/rag/knowledge_agent.py add-collection app/rag/books/my_collection
+```
+
+#### 3. List Available Collections
+
+```bash
+python app/rag/knowledge_agent.py list-collections
+```
+
+#### 4. Supported File Types
+- `.txt` files (plain text)
+- `.md` files (Markdown)
+
+#### 5. Collection Management Commands
+
+```bash
+# List all collections
+python app/rag/knowledge_agent.py list-collections
+
+# Add document to existing collection
+python app/rag/knowledge_agent.py add-doc <collection_name> <document_path>
+
+# Create new collection from folder
+python app/rag/knowledge_agent.py add-collection <folder_path>
+```
+
+#### Example Workflow
+
+1. **Create a new collection:**
+```bash
+# Create folder structure
+mkdir -p app/rag/books/company_docs
+# Add documents to the folder
+echo "Company information..." > app/rag/books/company_docs/company.txt
+# Create collection
+python app/rag/knowledge_agent.py add-collection app/rag/books/company_docs
+```
+
+2. **Add more documents later:**
+```bash
+python app/rag/knowledge_agent.py add-doc company_docs /path/to/new_document.txt
+```
+
+3. **Verify collections:**
+```bash
+python app/rag/knowledge_agent.py list-collections
+```
+
+#### Notes
+- Collections are automatically created in Qdrant if they don't exist
+- Documents are split into chunks for better retrieval
+- Upload progress and statistics are shown during processing
+- Collections can be used as context in the chatbot API
+
+
+
