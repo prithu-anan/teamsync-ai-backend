@@ -18,8 +18,13 @@ from qdrant_client.models import VectorParams, Distance
 from qdrant_client.http.exceptions import UnexpectedResponse
 from langchain_core.documents import Document
 
-from app.rag.quadrant_client import qdrant_client
-from app.rag.embedding_model import embedding_model
+try:
+    from app.rag.quadrant_client import qdrant_client
+    from app.rag.embedding_model import embedding_model
+except ImportError:
+    # Fallback for direct script execution
+    from quadrant_client import qdrant_client
+    from embedding_model import embedding_model
 
 # ==== Config ====
 BATCH_SIZE = 5
