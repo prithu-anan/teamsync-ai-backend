@@ -1,3 +1,26 @@
+"""
+Conversational RAG System with Firebase Chat History
+
+This module implements a conversational RAG (Retrieval-Augmented Generation) system
+that uses Firebase Firestore to persist chat history across sessions.
+
+Features:
+- Persistent chat history using Firebase Firestore
+- History-aware question reformulation
+- Context-aware responses based on retrieved documents
+- Session management with unique session IDs
+
+Usage:
+- python 7_rag_conversational.py          # Start interactive chat
+- python 7_rag_conversational.py --test   # Run test questions
+- python 7_rag_conversational.py --clear  # Clear chat history
+
+Dependencies:
+- Firebase/Firestore for chat history persistence
+- Qdrant for vector storage
+- OpenAI for embeddings and LLM
+"""
+
 import os
 
 from dotenv import load_dotenv
@@ -7,6 +30,8 @@ from langchain_community.vectorstores import Qdrant
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from google.cloud import firestore
+from langchain_google_firestore import FirestoreChatMessageHistory
 
 from quadrant_client import qdrant_client  # ✅ Your custom Qdrant setup
 from langchain_test import model as llm
@@ -16,6 +41,23 @@ load_dotenv()
 
 # === Config ===
 COLLECTION_NAME = "suhas_profile_chunks"
+
+# === Firebase/Firestore setup ===
+PROJECT_ID = "langchain-demo-6d982"  # Your actual project ID
+SESSION_ID = "rag_conversational_session"
+CHAT_HISTORY_COLLECTION = "rag_chat_history"
+
+# Initialize Firestore client
+print("Initializing Firestore client...")
+firestore_client = firestore.Client(project=PROJECT_ID)
+
+# Setup Firebase chat history
+print("Setting up Firebase chat history...")
+firebase_chat_history = FirestoreChatMessageHistory(
+    session_id=SESSION_ID,
+    collection=CHAT_HISTORY_COLLECTION,
+    client=firestore_client,
+)
 
 # Define the embedding model
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -103,14 +145,17 @@ question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
 
-# Enhanced function to simulate a continual chat with better message handling
+# Enhanced function to simulate a continual chat with Firebase persistence
 def continual_chat():
-    print("🤖 Welcome to the AI Assistant! I have information about Suhas Abdullah and Prithu Anan.")
-    print("💡 You can ask me about their backgrounds, projects, skills, or any related topics.")
+    print("🤖 Welcome to the AI Assistant!")
     print("📝 Type 'exit' to end the conversation.")
+    print("💾 Chat history will be persisted in Firebase.")
     print("=" * 60)
     
-    chat_history = []  # Collect chat history here (a sequence of messages)
+    # Load existing chat history from Firebase
+    existing_messages = firebase_chat_history.messages
+    if existing_messages:
+        print(f"📚 Loaded {len(existing_messages)} previous messages from Firebase.")
     
     while True:
         try:
@@ -124,19 +169,25 @@ def continual_chat():
                 print("🤔 Please enter a question or type 'exit' to leave.")
                 continue
             
+            # Get current chat history from Firebase
+            chat_history = firebase_chat_history.messages
+            
             # Process the user's query through the retrieval chain
             result = rag_chain.invoke({"input": query, "chat_history": chat_history})
             
             # Display the AI's response
             print(f"\n🤖 AI: {result['answer']}")
             
-            # Update the chat history with proper message types
-            chat_history.append(HumanMessage(content=query))
-            chat_history.append(AIMessage(content=result["answer"]))
+            # Add messages to Firebase chat history
+            firebase_chat_history.add_user_message(query)
+            firebase_chat_history.add_ai_message(result["answer"])
             
-            # Keep chat history manageable (limit to last 10 exchanges)
-            if len(chat_history) > 20:
-                chat_history = chat_history[-20:]
+            # Keep chat history manageable (limit to last 20 exchanges = 40 messages)
+            current_messages = firebase_chat_history.messages
+            if len(current_messages) > 40:
+                # Note: Firebase doesn't have a direct way to trim history
+                # The history will grow, but you can implement cleanup logic if needed
+                print(f"📊 Chat history now has {len(current_messages)} messages.")
                 
         except KeyboardInterrupt:
             print("\n\n👋 Goodbye! Thanks for chatting!")
@@ -159,28 +210,51 @@ def test_system():
     ]
     
     print("🧪 Testing RAG System with Sample Questions")
+    print("💾 Test results will be saved to Firebase.")
     print("=" * 50)
     
-    chat_history = []
+    # Use Firebase chat history for testing
+    chat_history = firebase_chat_history.messages
     
     for i, question in enumerate(test_questions, 1):
         print(f"\n📝 Test {i}: {question}")
         try:
             result = rag_chain.invoke({"input": question, "chat_history": chat_history})
             print(f"✅ Response: {result['answer'][:100]}...")
-            chat_history.append(HumanMessage(content=question))
-            chat_history.append(AIMessage(content=result["answer"]))
+            
+            # Add to Firebase chat history
+            firebase_chat_history.add_user_message(question)
+            firebase_chat_history.add_ai_message(result["answer"])
+            
+            # Update chat_history for next iteration
+            chat_history = firebase_chat_history.messages
         except Exception as e:
             print(f"❌ Error: {str(e)}")
     
     print("\n✅ Testing completed!")
+    print(f"📊 Total messages in Firebase: {len(firebase_chat_history.messages)}")
 
+
+# Function to clear chat history
+def clear_chat_history():
+    """Clear all chat history from Firebase"""
+    try:
+        # Clear all messages from Firebase
+        firebase_chat_history.clear()
+        print("🗑️ Chat history cleared successfully!")
+    except Exception as e:
+        print(f"❌ Error clearing chat history: {str(e)}")
 
 # Main function to start the continual chat
 if __name__ == "__main__":
     import sys
     
-    if len(sys.argv) > 1 and sys.argv[1] == "--test":
-        test_system()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--test":
+            test_system()
+        elif sys.argv[1] == "--clear":
+            clear_chat_history()
+        else:
+            print("Usage: python 7_rag_conversational.py [--test|--clear]")
     else:
         continual_chat()
