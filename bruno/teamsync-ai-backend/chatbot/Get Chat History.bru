@@ -1,0 +1,19 @@
+meta {
+  name: Get Chat History
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{BASE_URL}}/chatbot/{{userId}}?size=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  size: 20
+}
+
+docs {
+  size indicates message count : higher size is discouraged as it might overflow the LLM's context window.
+}

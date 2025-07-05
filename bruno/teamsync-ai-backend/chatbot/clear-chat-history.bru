@@ -1,0 +1,27 @@
+meta {
+  name: Clear Chat History
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{BASE_URL}}/chatbot/{{userId}}
+  body: none
+  auth: none
+}
+
+docs {
+  name: Clear Chat History
+  description: Clear all chat history for a specific user
+  params: |
+    - userId: Unique identifier for the user
+  response: |
+    Returns a success message.
+    
+    Example response:
+    ```json
+    {
+      "message": "Chat history cleared for user user123"
+    }
+    ```
+} 
