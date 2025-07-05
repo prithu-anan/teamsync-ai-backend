@@ -20,7 +20,7 @@ from app.rag.chat_model import model
 from app.rag.embedding_model import embedding_model
 
 # === Firebase/Firestore setup ===
-PROJECT_ID = os.getenv("PROJECT_ID", "langchain-demo-6d982")
+PROJECT_ID = os.getenv("PROJECT_ID")
 CHAT_HISTORY_COLLECTION = "rag_chat_history"
 
 # Initialize Firestore client
