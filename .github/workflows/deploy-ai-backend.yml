@@ -40,39 +40,40 @@ jobs:
           port:     22
           script: |
             set -eux
-
+      
             TAG=${{ github.sha }}
             IMAGE=${{ secrets.REGISTRY_USER }}/teamsync-ai-backend
-
+      
+            # write creds
             cat > ~/firebase-creds.json <<EOF
             ${{ secrets.FIREBASE_SA_KEY }}
             EOF
-
-            # ensure the shared network exists
+      
+            # ensure network
             docker network inspect teamsync_network \
               || docker network create teamsync_network
-
-            # pull the new image (or fallback to latest)
-            docker pull $IMAGE:${TAG} || docker pull $IMAGE:latest
-
-            # remove old container
+      
+            # pull image
+            docker pull $IMAGE:$TAG || docker pull $IMAGE:latest
+      
+            # remove old
             old=$(docker ps -aq --filter "name=teamsync-ai-backend")
             if [ -n "$old" ]; then
               docker rm -f $old
             fi
-
-            # run the new container, injecting secrets as env
+      
+            # run new container
             docker run -d \
               --name teamsync-ai-backend \
               --network teamsync_network \
               -p 8000:8000 \
               -v ~/firebase-creds.json:/app/firebase-creds.json:ro \
               -e GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-creds.json \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-              -e DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}" \
-              -e QUADRANT_URL="${{ secrets.QUADRANT_URL }}" \
-              -e QUADRANT_API_KEY="${{ secrets.QUADRANT_API_KEY }}" \
-              -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-              -e PROJECT_ID="${{ secrets.PROJECT_ID }}" \              
-              $IMAGE:${TAG}
+              -e DATABASE_URL="$DATABASE_URL" \
+              -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+              -e DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" \
+              -e QUADRANT_URL="$QUADRANT_URL" \
+              -e QUADRANT_API_KEY="$QUADRANT_API_KEY" \
+              -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+              -e PROJECT_ID="$PROJECT_ID" \
+              "$IMAGE:$TAG"
