@@ -147,5 +147,54 @@ python app/rag/knowledge_agent.py list-collections
 - Upload progress and statistics are shown during processing
 - Collections can be used as context in the chatbot API
 
+### Chatbot API with Agent Integration
+
+The chatbot now supports three modes:
+
+#### 1. **RAG Mode** (with context)
+- Use when `context` parameter is provided
+- Retrieves information from specific collections
+- Example: `{"query": "Tell me about Suhas", "context": "about_us"}`
+
+#### 2. **Agent Mode** (personalized, no context)
+- Use when no `context` is provided but JWT token is present
+- Uses LangChain agents with tools to access backend API
+- Can fetch user information, tasks, and other personalized data
+- Example: `{"query": "What are my tasks?", "context": null}` with JWT header
+
+#### 3. **Regular Chat Mode** (fallback)
+- Use when no context and no JWT token
+- Simple conversational responses
+
+#### Environment Variables
+```bash
+# Add to your .env file
+BASE_SERVER_URL=http://localhost:8080  # Backend server URL
+```
+
+#### API Usage Examples
+
+**RAG Query:**
+```bash
+curl -X POST "http://localhost:8000/chatbot/user123" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Tell me about the company", "context": "about_us"}'
+```
+
+**Agent Query (Personalized):**
+```bash
+curl -X POST "http://localhost:8000/chatbot/user123" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"query": "What are my current tasks?", "context": null}'
+```
+
+**Regular Chat:**
+```bash
+curl -X POST "http://localhost:8000/chatbot/user123" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Hello! How are you?", "context": null}'
+```
+
 
 

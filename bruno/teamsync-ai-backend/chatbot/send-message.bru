@@ -10,10 +10,13 @@ post {
   auth: none
 }
 
+headers {
+  Authorization: Bearer {{jwt}}
+}
+
 body:json {
   {
-    "query": "I hope you remember me. can you tell me about Prithu Anan",
-    "context":"about_us"
+   "query":"who am I?"
   }
 }
 
@@ -23,23 +26,38 @@ docs {
   params: |
     - userId: Unique identifier for the user
     - userQuery: The message/query from the user
-    - context (optional): Collection name for RAG context (if not provided, works as regular chat)
+    - context (optional): Collection name for RAG context (if provided, uses RAG; otherwise uses agent)
+    - jwt: JWT token for authentication (MANDATORY - agent decides whether to use tools or not)
   request: |
     ```json
     {
       "query": "Tell me about Suhas",
-      "context": "suhas_profile_chunks"
+      "context": "about_us"
     }
     ```
   response: |
     Returns the AI response with metadata.
     
-    Example response:
+    Example responses:
+    
+    **RAG Response (with context):**
     ```json
     {
       "answer": "Suhas Abdullah is a Computer Science and Engineering student...",
       "response_type": "rag",
       "context": "suhas_profile_chunks",
+      "user_id": "user123",
+      "message_count": 4,
+      "error": null
+    }
+    ```
+    
+    **Agent Response (no context - agent decides whether to use tools):**
+    ```json
+    {
+      "answer": "Based on your profile, you are Sadat (ID: 1, Email: sadat@gmail.com). You have a task 'Implement Login Page' with high priority due on 2025-02-01.",
+      "response_type": "agent",
+      "context": null,
       "user_id": "user123",
       "message_count": 4,
       "error": null

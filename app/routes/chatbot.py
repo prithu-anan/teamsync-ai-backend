@@ -4,7 +4,7 @@ Chatbot API Routes
 This module provides API endpoints for the conversational RAG system.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
@@ -115,21 +115,36 @@ async def get_chat_history(
         raise HTTPException(status_code=500, detail=f"Failed to get chat history: {str(e)}")
 
 @router.post("/{user_id}", response_model=ChatResponse)
-async def process_message(user_id: str, request: ChatRequest):
+async def process_message(
+    user_id: str, 
+    request: ChatRequest,
+    authorization: str = Header(..., description="JWT token in format: Bearer <token>")
+):
     """
     Process a user message and return a response
     
     Args:
         user_id: Unique identifier for the user
         request: Chat request with query and optional context
+        authorization: JWT token from Authorization header (required)
     
     Returns:
         Chat response with answer and metadata
     """
     try:
+        # Extract JWT token from Authorization header
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header format. Use 'Bearer <token>'")
+        
+        jwt_token = authorization[7:]  # Remove "Bearer " prefix
+        
+        if not jwt_token:
+            raise HTTPException(status_code=401, detail="JWT token is required")
+        
         result = process_user_message(
             user_id=user_id,
             query=request.query,
+            jwt_token=jwt_token,
             context=request.context
         )
         

@@ -14,10 +14,14 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from google.cloud import firestore
 from langchain_google_firestore import FirestoreChatMessageHistory
+from langchain.agents import AgentExecutor, create_structured_chat_agent
+from langchain.memory import ConversationBufferMemory
+from langchain import hub
 
 from app.rag.quadrant_client import qdrant_client
 from app.rag.chat_model import model
 from app.rag.embedding_model import embedding_model
+from app.rag.tools.agent_tools import create_agent_tools
 
 # === Firebase/Firestore setup ===
 PROJECT_ID = os.getenv("PROJECT_ID")
@@ -104,8 +108,41 @@ def get_rag_chain(collection_name: str):
     # Create a retrieval chain
     return create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
+def get_agent_executor(jwt_token: str):
+    """Create an agent executor with tools for personalized queries"""
+    
+    # Create tools with JWT authentication
+    tools = create_agent_tools(jwt_token)
+    
+    # Load the structured chat prompt from hub
+    prompt = hub.pull("hwchase17/structured-chat-agent")
+    
+    # Create memory for conversation history
+    memory = ConversationBufferMemory(
+        memory_key="chat_history", 
+        return_messages=True
+    )
+    
+    # Create the agent
+    agent = create_structured_chat_agent(
+        llm=model, 
+        tools=tools, 
+        prompt=prompt
+    )
+    
+    # Create agent executor
+    agent_executor = AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        memory=memory,
+        handle_parsing_errors=True,
+    )
+    
+    return agent_executor
+
 def get_regular_chat_chain():
-    """Create a regular chat chain without RAG context"""
+    """Create a regular chat chain without RAG context (fallback)"""
     
     # Simple chat prompt for regular conversations
     chat_system_prompt = (
@@ -125,6 +162,7 @@ def get_regular_chat_chain():
 def process_user_message(
     user_id: str, 
     query: str, 
+    jwt_token: str,
     context: Optional[str] = None
 ) -> Dict[str, Any]:
     """
@@ -155,15 +193,23 @@ def process_user_message(
             answer = result["answer"]
             response_type = "rag"
         else:
-            # Use regular chat without RAG
-            chat_chain = get_regular_chat_chain()
-            chain = chat_chain | model
-            result = chain.invoke({
-                "input": query,
-                "chat_history": current_messages
-            })
-            answer = result.content
-            response_type = "chat"
+            # Use agent for all queries without context - agent decides whether to use tools
+            try:
+                agent_executor = get_agent_executor(jwt_token)
+                result = agent_executor.invoke({"input": query})
+                answer = result["output"]
+                response_type = "agent"
+            except Exception as e:
+                # Fallback to regular chat if agent fails
+                print(f"Agent failed, falling back to regular chat: {str(e)}")
+                chat_chain = get_regular_chat_chain()
+                chain = chat_chain | model
+                result = chain.invoke({
+                    "input": query,
+                    "chat_history": current_messages
+                })
+                answer = result.content
+                response_type = "chat"
         
         # Add messages to Firebase chat history
         chat_history.add_user_message(query)
@@ -252,9 +298,9 @@ def test_conversational_agent():
     print("🧪 Testing Conversational Agent")
     print("=" * 40)
     
-    # Test regular chat
-    print("\n📝 Testing regular chat (no context):")
-    result = process_user_message(test_user_id, "Hello! How are you today?")
+    # Test agent chat (no context)
+    print("\n📝 Testing agent chat (no context):")
+    result = process_user_message(test_user_id, "Hello! How are you today?", "test_jwt_token")
     print(f"Response: {result['answer']}")
     
     # Test RAG chat with context
@@ -265,6 +311,7 @@ def test_conversational_agent():
         result = process_user_message(
             test_user_id, 
             "Tell me about this collection", 
+            "test_jwt_token",
             context=context
         )
         print(f"Response: {result['answer']}")
