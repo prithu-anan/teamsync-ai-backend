@@ -69,6 +69,7 @@ jobs:
             QUADRANT_API_KEY='${{ secrets.QUADRANT_API_KEY }}'
             OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}'
             PROJECT_ID='${{ secrets.PROJECT_ID }}'
+            BASE_SERVER_URL='${{ secrets.BASE_SERVER_URL }}'
             
             # …then your docker run can reference them:
             docker run -d \
@@ -84,4 +85,5 @@ jobs:
               -e QUADRANT_API_KEY="$QUADRANT_API_KEY" \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
               -e PROJECT_ID="$PROJECT_ID" \
+              -e BASE_SERVER_URL="$BASE_SERVER_URL" \
               "$IMAGE:$TAG"
