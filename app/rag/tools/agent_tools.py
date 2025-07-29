@@ -97,7 +97,7 @@ async def get_current_user(jwt_token: str) -> str:
 
 async def get_user_tasks(jwt_token: str) -> str:
     """
-    Get tasks for the current user from the backend API
+    Get tasks assigned to the current user from the backend API
     
     Args:
         jwt_token: JWT token for authentication
@@ -106,30 +106,82 @@ async def get_user_tasks(jwt_token: str) -> str:
         Formatted string with user tasks information (excluding sensitive data like user IDs)
     """
     try:
-        # First get the current user to get their ID
-        user_response = await make_authenticated_request("/auth/me", jwt_token)
-        
-        if user_response.get("code") != 200:
-            return f"Failed to get user information: {user_response.get('message', 'Unknown error')}"
-        
-        user_data = user_response.get("data", {})
-        user_id = user_data.get('id')
-        
-        if not user_id:
-            return "Failed to get user ID"
-        
-        # Now get the user's tasks using the ID internally
-        response = await make_authenticated_request(f"/tasks/{user_id}", jwt_token)
+        response = await make_authenticated_request(f"/tasks/user/assigned", jwt_token)
+
+        # print(f"user tasks {response}")
         
         if response.get("code") == 200:
-            task_data = response.get("data", {})
-            # Return task information without exposing the user ID
-            return f"Task: {task_data.get('title', 'Unknown')} - Status: {task_data.get('status', 'Unknown')} - Priority: {task_data.get('priority', 'Unknown')} - Deadline: {task_data.get('deadline', 'Unknown')}"
+            tasks_data = response.get("data", [])
+            
+            if not tasks_data:
+                return "No tasks found for the current user."
+            
+            # Handle list of tasks
+            if isinstance(tasks_data, list):
+                tasks_info = []
+                for i, task in enumerate(tasks_data, 1):
+                    title = task.get('title', 'Unknown')
+                    status = task.get('status', 'Unknown')
+                    priority = task.get('priority', 'Unknown')
+                    deadline = task.get('deadline', 'Unknown')
+                    description = task.get('description', 'No description')
+                    
+                    task_info = f"{i}. {title} - Status: {status} - Priority: {priority} - Deadline: {deadline} - Description: {description}"
+                    tasks_info.append(task_info)
+                
+                return f"User has {len(tasks_data)} task(s):\n" + "\n".join(tasks_info)
+            else:
+                # Handle single task (fallback)
+                task_data = tasks_data
+                return f"Task: {task_data.get('title', 'Unknown')} - Status: {task_data.get('status', 'Unknown')} - Priority: {task_data.get('priority', 'Unknown')} - Deadline: {task_data.get('deadline', 'Unknown')}"
         else:
             return f"Failed to get user tasks: {response.get('message', 'Unknown error')}"
             
     except Exception as e:
         return f"Error getting user tasks: {str(e)}"
+
+def get_available_tools() -> str:
+    """
+    Get a formatted markdown description of all available tools
+    
+    Returns:
+        Formatted markdown string describing available tools
+    """
+    tools_description = """
+# Available Tools
+
+Here are the tools you can use to interact with the TeamSync AI backend:
+
+## 🔗 **get_current_user**
+**Purpose**: Retrieve current user information from the backend API
+
+**When to use**: 
+- When users ask about their profile, account, or personal information
+
+**Returns**: User's name and email address
+
+---
+
+## 📋 **get_user_tasks**
+**Purpose**: Get all tasks assigned to the current user from the backend API
+
+**When to use**:
+- When users ask about their tasks, assignments, or work items
+- When users want to see what they need to work on
+- When users ask about their workload or responsibilities
+
+**Returns**: A formatted list of tasks including:
+- Task title and description
+- Current status (todo, in_progress, completed, etc.)
+- Priority level (low, medium, high, urgent)
+- Deadline information
+
+---
+
+## 🔒 **Security Note**
+All tools use secure JWT authentication and only return non-sensitive information to protect user privacy.
+"""
+    return tools_description
 
 # Create LangChain tools
 def create_agent_tools(jwt_token: str):
@@ -165,7 +217,7 @@ def create_agent_tools(jwt_token: str):
             return f"Error getting user information: {str(e)}"
     
     def get_user_tasks_tool() -> str:
-        """Get tasks for the current user from the backend API"""
+        """Get tasks assigned to the current user from the backend API"""
         try:
             # Run async function in sync context
             import asyncio
@@ -185,6 +237,10 @@ def create_agent_tools(jwt_token: str):
         except Exception as e:
             return f"Error getting user tasks: {str(e)}"
     
+    def get_available_tools_tool() -> str:
+        """Get a formatted description of all available tools"""
+        return get_available_tools()
+    
     tools = [
         StructuredTool.from_function(
             name="get_current_user",
@@ -195,6 +251,11 @@ def create_agent_tools(jwt_token: str):
             name="get_user_tasks",
             description="Get tasks for the current user from the backend API. Use this when the user asks about their tasks, assignments, or work items.",
             func=get_user_tasks_tool,
+        ),
+        StructuredTool.from_function(
+            name="get_available_tools",
+            description="Get a formatted markdown description of all available tools. Use this when users ask about what tools are available, what they can do, or how to use the system.",
+            func=get_available_tools_tool,
         ),
     ]
     
