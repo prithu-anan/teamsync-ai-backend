@@ -123,6 +123,25 @@ def get_agent_executor(jwt_token: str):
         return_messages=True
     )
     
+    # Add system message to guide the agent
+    system_message = SystemMessage(content="""You are a helpful AI assistant for TeamSync, an AI-powered collaboration platform. 
+
+IMPORTANT INSTRUCTIONS:
+- When users ask about platform features, capabilities, or how to do something, you MUST use the appropriate tools to provide specific, detailed information.
+- Do not just mention that tools exist - actually call them and provide the information they return.
+- Always provide the specific URLs and detailed information that the tools return.
+- Make the information actionable and helpful.
+
+For example:
+- If someone asks "Where can I add tasks?" - use get_kanban_info and get_calendar_info tools
+- If someone asks "What is TeamSync?" - use get_platform_overview tool
+- If someone asks "How do I manage projects?" - use get_projects_info tool
+- If someone asks "Tell me about the dashboard" - use get_dashboard_info tool
+
+You have access to tools that provide detailed information about different sections of the platform. Use them to give users specific, actionable guidance with URLs.""")
+    
+    memory.chat_memory.add_message(system_message)
+    
     # Create the agent
     agent = create_structured_chat_agent(
         llm=model, 
@@ -130,13 +149,15 @@ def get_agent_executor(jwt_token: str):
         prompt=prompt
     )
     
-    # Create agent executor
+    # Create agent executor with enhanced configuration
     agent_executor = AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         verbose=True,
         memory=memory,
         handle_parsing_errors=True,
+        max_iterations=5,  # Allow multiple tool calls
+        early_stopping_method="generate",  # Stop when agent generates final answer
     )
     
     return agent_executor
