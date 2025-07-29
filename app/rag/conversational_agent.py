@@ -108,7 +108,7 @@ def get_rag_chain(collection_name: str):
     # Create a retrieval chain
     return create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-def get_agent_executor(jwt_token: str):
+def get_agent_executor(jwt_token: str, chat_history: List = None):
     """Create an agent executor with tools for personalized queries"""
     
     # Create tools with JWT authentication
@@ -131,16 +131,23 @@ IMPORTANT INSTRUCTIONS:
 - Do not just mention that tools exist - actually call them and provide the information they return.
 - Always provide the specific URLs and detailed information that the tools return.
 - Make the information actionable and helpful.
+- You have access to conversation history - use it to provide context-aware responses and refer to previous interactions when relevant.
 
 For example:
 - If someone asks "Where can I add tasks?" - use get_kanban_info and get_calendar_info tools
 - If someone asks "What is TeamSync?" - use get_platform_overview tool
 - If someone asks "How do I manage projects?" - use get_projects_info tool
 - If someone asks "Tell me about the dashboard" - use get_dashboard_info tool
+- If someone refers to previous conversation, acknowledge it and build upon it
 
 You have access to tools that provide detailed information about different sections of the platform. Use them to give users specific, actionable guidance with URLs.""")
     
     memory.chat_memory.add_message(system_message)
+    
+    # Add existing chat history to memory if provided
+    if chat_history:
+        for message in chat_history:
+            memory.chat_memory.add_message(message)
     
     # Create the agent
     agent = create_structured_chat_agent(
@@ -165,11 +172,18 @@ You have access to tools that provide detailed information about different secti
 def get_regular_chat_chain():
     """Create a regular chat chain without RAG context (fallback)"""
     
-    # Simple chat prompt for regular conversations
+    # Enhanced chat prompt for better history awareness
     chat_system_prompt = (
-        "You are a helpful and knowledgeable AI assistant. "
+        "You are a helpful and knowledgeable AI assistant for TeamSync, an AI-powered collaboration platform. "
         "Provide informative, accurate, and engaging responses to user questions. "
-        "Be conversational, helpful, and professional in your interactions."
+        "Be conversational, helpful, and professional in your interactions. "
+        "\n\nIMPORTANT: You have access to conversation history. Use it to:"
+        "\n- Provide context-aware responses"
+        "\n- Refer to previous interactions when relevant"
+        "\n- Build upon previous conversations"
+        "\n- Acknowledge when users refer to earlier parts of the conversation"
+        "\n- Maintain continuity in the conversation"
+        "\n- If a user asks follow-up questions, use the context from previous messages"
     )
     
     chat_prompt = ChatPromptTemplate.from_messages([
@@ -199,24 +213,22 @@ def process_user_message(
     """
     try:
         # Get user's chat history
-        chat_history = get_chat_history(user_id)
-        
-        # Get current messages from Firebase
-        current_messages = chat_history.messages
+        chat_history_obj = get_chat_history(user_id)
+        chat_history_messages = chat_history_obj.messages
         
         if context:
             # Use RAG chain with specific context
             rag_chain = get_rag_chain(context)
             result = rag_chain.invoke({
                 "input": query, 
-                "chat_history": current_messages
+                "chat_history": chat_history_messages
             })
             answer = result["answer"]
             response_type = "rag"
         else:
             # Use agent for all queries without context - agent decides whether to use tools
             try:
-                agent_executor = get_agent_executor(jwt_token)
+                agent_executor = get_agent_executor(jwt_token, chat_history_messages)
                 result = agent_executor.invoke({"input": query})
                 answer = result["output"]
                 response_type = "agent"
@@ -227,21 +239,21 @@ def process_user_message(
                 chain = chat_chain | model
                 result = chain.invoke({
                     "input": query,
-                    "chat_history": current_messages
+                    "chat_history": chat_history_messages
                 })
                 answer = result.content
                 response_type = "chat"
         
-        # Add messages to Firebase chat history
-        chat_history.add_user_message(query)
-        chat_history.add_ai_message(str(answer))
+        # Add messages to Firebase chat history using the object
+        chat_history_obj.add_user_message(query)
+        chat_history_obj.add_ai_message(str(answer))
         
         return {
             "answer": answer,
             "response_type": response_type,
             "context": context,
             "user_id": user_id,
-            "message_count": len(chat_history.messages)
+            "message_count": len(chat_history_obj.messages)
         }
         
     except Exception as e:
