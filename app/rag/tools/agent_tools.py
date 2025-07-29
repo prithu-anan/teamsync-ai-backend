@@ -140,6 +140,49 @@ async def get_user_tasks(jwt_token: str) -> str:
     except Exception as e:
         return f"Error getting user tasks: {str(e)}"
 
+def get_available_tools() -> str:
+    """
+    Get a formatted markdown description of all available tools
+    
+    Returns:
+        Formatted markdown string describing available tools
+    """
+    tools_description = """
+# Available Tools
+
+Here are the tools you can use to interact with the TeamSync AI backend:
+
+## 🔗 **get_current_user**
+**Purpose**: Retrieve current user information from the backend API
+
+**When to use**: 
+- When users ask about their profile, account, or personal information
+
+**Returns**: User's name and email address
+
+---
+
+## 📋 **get_user_tasks**
+**Purpose**: Get all tasks assigned to the current user from the backend API
+
+**When to use**:
+- When users ask about their tasks, assignments, or work items
+- When users want to see what they need to work on
+- When users ask about their workload or responsibilities
+
+**Returns**: A formatted list of tasks including:
+- Task title and description
+- Current status (todo, in_progress, completed, etc.)
+- Priority level (low, medium, high, urgent)
+- Deadline information
+
+---
+
+## 🔒 **Security Note**
+All tools use secure JWT authentication and only return non-sensitive information to protect user privacy.
+"""
+    return tools_description
+
 # Create LangChain tools
 def create_agent_tools(jwt_token: str):
     """
@@ -194,6 +237,10 @@ def create_agent_tools(jwt_token: str):
         except Exception as e:
             return f"Error getting user tasks: {str(e)}"
     
+    def get_available_tools_tool() -> str:
+        """Get a formatted description of all available tools"""
+        return get_available_tools()
+    
     tools = [
         StructuredTool.from_function(
             name="get_current_user",
@@ -204,6 +251,11 @@ def create_agent_tools(jwt_token: str):
             name="get_user_tasks",
             description="Get tasks for the current user from the backend API. Use this when the user asks about their tasks, assignments, or work items.",
             func=get_user_tasks_tool,
+        ),
+        StructuredTool.from_function(
+            name="get_available_tools",
+            description="Get a formatted markdown description of all available tools. Use this when users ask about what tools are available, what they can do, or how to use the system.",
+            func=get_available_tools_tool,
         ),
     ]
     
