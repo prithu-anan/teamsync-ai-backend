@@ -24,7 +24,14 @@ pip install -r requirements.txt
 * Create a .env file with the following credential - 
 
 ```bash
-DATABASE_URL=postgresql://postgres:123@localhost:5433/postgres
+DATABASE_URL=YOUR_DATABASE_URL
+GEMINI_API_KEY=GEMINI_API_KEY
+GOOGLE_APPLICATION_CREDENTIALS=FIREBASE_CREDENTIALS
+QUADRANT_URL=VECTOR_STORE_URL
+QUADRANT_API_KEY=YOUR_QUADRANT_API_KEY
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+PROJECT_ID=FIREBASE_PROJECT_ID
+BASE_SERVER_URL=BACKEND_SERVER_URL
 ```
 
 * Make sure the postgres docker service is running
